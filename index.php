@@ -1,226 +1,364 @@
 <?php 
-session_start();
-require_once("vendor/autoload.php");
+// start session
+    session_start();
+// end start session
 
-use \Slim\Slim;
-use \Hcode\Page;
-use \Hcode\PageAdmin;
-use \Hcode\Model\User;
+// loading all class
+    require_once("vendor/autoload.php");
+// end loading all class
 
-$app = new Slim();
+// using namespaces
+    use \Slim\Slim;
+    use \Hcode\Page;
+    use \Hcode\PageAdmin;
+    use \Hcode\Model\User;
+    use \Hcode\Model\Category;
+// end namespaces
 
-$app->config("debug", true);
-
-$app->get("/", function() {
+// configure slim
+    $app = new Slim();
     
-    $page = new Page();
+    $app->config("debug", true);
+// end configure slim
 
-    $page->setTpl("index");
+// rota padrao
+    $app->get("/", function() {
+        
+        $page = new Page();
 
-});
+        $page->setTpl("index");
 
-$app->get("/admin", function() {
-    
-    User::verifyLogin();
+    });
+// end rota padrao
 
-    $page = new PageAdmin();
+// rota admin e login
+    $app->get("/admin", function() {
+        
+        User::verifyLogin();
 
-    $page->setTpl("index");
+        $page = new PageAdmin();
 
-});
+        $page->setTpl("index");
 
-$app->get("/admin/login", function() {
-    
-    $page = new PageAdmin([
-    	"header"=>false,
-    	"footer"=>false
-    ]);
+    });
 
-    $page->setTpl("login");
+    $app->get("/admin/login", function() {
+        
+        $page = new PageAdmin([
+        	"header"=>false,
+        	"footer"=>false
+        ]);
 
-});
+        $page->setTpl("login");
 
-$app->post("/admin/login", function() {
-    
-    User::login($_POST["login"], $_POST["password"]);
+    });
 
-    header("Location: /admin");
+    $app->post("/admin/login", function() {
+        
+        User::login($_POST["login"], $_POST["password"]);
 
-    exit;
-});
+        header("Location: /admin");
 
-$app->get("/admin/logout", function(){
+        exit;
+    });
 
-    User::logout();
-    
-    header("Location: /admin/login");
-    exit;
+    $app->get("/admin/logout", function(){
 
-});
+        User::logout();
+        
+        header("Location: /admin/login");
+        exit;
 
-$app->get("/admin/users", function(){
+    });
+// end admin e login
 
-	User::verifyLogin();
+// rota users
+    $app->get("/admin/users", function(){
 
-    $users = User::listAll();
+    	User::verifyLogin();
 
-	$page = new PageAdmin();
+        $users = User::listAll();
 
-	$page->setTpl("users", array(
-        "users"=>$users
-    ));
-   
-});
+    	$page = new PageAdmin();
 
-$app->get("/admin/users/create", function(){
+    	$page->setTpl("users", array(
+            "users"=>$users
+        ));
+       
+    });
 
-	User::verifyLogin();
+    $app->get("/admin/users/create", function(){
 
-	$page = new PageAdmin();
+    	User::verifyLogin();
 
-	$page->setTpl("users-create");
-   
-});
+    	$page = new PageAdmin();
 
-$app->get("/admin/users/:iduser/delete", function($iduser){
-    
-    User::verifyLogin();
+    	$page->setTpl("users-create");
+       
+    });
 
-    $user = new User();
+    $app->get("/admin/users/:iduser/delete", function($iduser){
+        
+        User::verifyLogin();
 
-    $user->get((int)$iduser);
+        $user = new User();
 
-    $user->delete();
+        $user->get((int)$iduser);
 
-    header("Location: /admin/users");
-    exit;
+        $user->delete();
 
-});
+        header("Location: /admin/users");
+        exit;
 
-$app->get("/admin/users/:iduser", function($iduser){
+    });
 
-	User::verifyLogin();
+    $app->get("/admin/users/:iduser", function($iduser){
 
-    $user = new User();
+    	User::verifyLogin();
 
-    $user->get((int)$iduser);
-	
-	$page = new PageAdmin();
+        $user = new User();
 
-	$page->setTpl("users-update", array(
-        "user"=>$user->getValues()      
-    ));
-   
-});
+        $user->get((int)$iduser);
+    	
+    	$page = new PageAdmin();
 
-$app->post("/admin/users/create", function(){
-	
-	User::verifyLogin();
-    
-    $user = new User();
+    	$page->setTpl("users-update", array(
+            "user"=>$user->getValues()      
+        ));
+       
+    });
 
-    $_POST["inadmin"] = (isset($_POST["inadmin"])) ? 1 : 0;
+    $app->post("/admin/users/create", function(){
+    	
+    	User::verifyLogin();
+        
+        $user = new User();
 
-    $user->setData($_POST);
+        $_POST["inadmin"] = (isset($_POST["inadmin"])) ? 1 : 0;
 
-    $user->save();
+        $user->setData($_POST);
 
-    header("Location: /admin/users");
-    exit;
+        $user->save();
 
-});
+        header("Location: /admin/users");
+        exit;
 
-$app->post("/admin/users/:iduser", function($iduser){
-	
-	User::verifyLogin();
+    });
 
-    $user = new User();
+    $app->post("/admin/users/:iduser", function($iduser){
+    	
+    	User::verifyLogin();
 
-    $_POST["inadmin"] = (isset($_POST["inadmin"])) ? 1 : 0;
+        $user = new User();
 
-    $user->get((int)$iduser);
+        $_POST["inadmin"] = (isset($_POST["inadmin"])) ? 1 : 0;
 
-    $user->setData($_POST);
+        $user->get((int)$iduser);
 
-    $user->update();
+        $user->setData($_POST);
 
-    header("Location: /admin/users");
-    exit;
+        $user->update();
 
-});
+        header("Location: /admin/users");
+        exit;
 
-$app->get("/admin/forgot", function(){
+    });
+// end rota users
 
-    $page = new PageAdmin([
-        "header"=>false,
-        "footer"=>false
-    ]);
+// rota forgot
+    $app->get("/admin/forgot", function(){
 
-    $page->setTpl("forgot");
+        $page = new PageAdmin([
+            "header"=>false,
+            "footer"=>false
+        ]);
 
-});
+        $page->setTpl("forgot");
 
-$app->post("/admin/forgot", function(){
+    });
 
-    $user = User::getForgot($_POST['email']);
+    $app->post("/admin/forgot", function(){
 
-    header("Location: /admin/forgot/sent");
-    exit;
+        $user = User::getForgot($_POST['email']);
 
-});
+        header("Location: /admin/forgot/sent");
+        exit;
 
-$app->get("/admin/forgot/sent", function(){
+    });
 
-    $page = new PageAdmin([
-        "header"=>false,
-        "footer"=>false
-    ]);
+    $app->get("/admin/forgot/sent", function(){
 
-    $page->setTpl("forgot-sent");
+        $page = new PageAdmin([
+            "header"=>false,
+            "footer"=>false
+        ]);
 
-});
+        $page->setTpl("forgot-sent");
 
-$app->get("/admin/forgot/reset", function(){
+    });
 
-    $user = User::validForgotDecrypty($_GET['code']);
+    $app->get("/admin/forgot/reset", function(){
 
-    $page = new PageAdmin([
-        "header"=>false,
-        "footer"=>false
-    ]);
+        $user = User::validForgotDecrypty($_GET['code']);
 
-    $page->setTpl("forgot-reset",array(
-        "name"=>$user["desperson"],
-        "code"=>$_GET['code']
-    ));
+        $page = new PageAdmin([
+            "header"=>false,
+            "footer"=>false
+        ]);
 
-});
+        $page->setTpl("forgot-reset",array(
+            "name"=>$user["desperson"],
+            "code"=>$_GET['code']
+        ));
 
-$app->post("/admin/forgot/reset", function(){
+    });
 
-    $forgot = User::validForgotDecrypty($_POST["code"]);
+    $app->post("/admin/forgot/reset", function(){
 
-    User::setForgotUsed($forgot["idrecovery"]);
+        $forgot = User::validForgotDecrypty($_POST["code"]);
 
-    $user = new User();
+        User::setForgotUsed($forgot["idrecovery"]);
 
-    $user->get((int)$forgot["iduser"]);
+        $user = new User();
 
-    $password = password_hash($_POST["password"], PASSWORD_DEFAULT,[
-        "cost"=>12
-    ]);    
+        $user->get((int)$forgot["iduser"]);
 
-    $user->setPassword($password);
+        $password = password_hash($_POST["password"], PASSWORD_DEFAULT,[
+            "cost"=>12
+        ]);    
 
-    $page = new PageAdmin([
-        "header"=>false,
-        "footer"=>false
-    ]);
+        $user->setPassword($password);
 
-    $page->setTpl("forgot-reset-success");
+        $page = new PageAdmin([
+            "header"=>false,
+            "footer"=>false
+        ]);
 
-});
+        $page->setTpl("forgot-reset-success");
 
-$app->run();
+    });
+// end rota forgot
 
+// rota categorias
+    $app->get("/admin/categories", function(){
+
+        User::verifyLogin();
+
+        $categories = Category::listAll();
+
+        $page = new PageAdmin();
+
+        $page->setTpl("categories", [
+            "categories"=>$categories
+        ]);
+
+    });
+
+    $app->get("/admin/categories/create", function(){
+
+        User::verifyLogin();
+
+        $page = new PageAdmin();
+
+        $page->setTpl("categories-create");
+
+    });
+
+    $app->post("/admin/categories/create", function(){
+
+        User::verifyLogin();
+
+        $category = new Category();
+
+        $category->setData($_POST);
+
+        $category->save();
+
+        header("location: /admin/categories");
+        exit;
+    });
+
+    $app->get("/admin/categories/:idcategory/delete", function($idcategory){
+
+        User::verifyLogin();
+
+        $category = new Category();
+
+        $category->get((int)$idcategory);
+
+        $category->delete();
+        
+        header("location: /admin/categories");
+        exit;
+
+    });
+
+    $app->get("/admin/categories/:idcategory", function($idcategory){
+
+        User::verifyLogin();
+
+        $category = new Category();
+
+        $category->get((int)$idcategory);       
+
+        $page = new PageAdmin();
+
+        $page->setTpl("categories-update",[
+            "category"=>$category->getValues()
+
+        ]);
+
+    });
+
+    $app->post("/admin/categories/:idcategory", function($idcategory){
+
+        User::verifyLogin();
+        
+        $category = new Category();
+
+        $category->get((int)$idcategory);  
+
+        $category->setData($_POST);
+
+        $category->save(); 
+
+        header("location: /admin/categories");
+        exit;
+
+    });
+
+// end rota categorias
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// execucao
+    $app->run();
+// end execucao
  ?>
